@@ -1,6 +1,6 @@
 --=====================================================
--- 馃幆 YOOKIIY V4.1 - CORRE脟脙O DE BUGS (GOD MODE/NOCLIP)
--- 鉁� God Mode por MaxHealth + NoClip por CollisionGroup
+-- 馃幆 YOOKIIY V4.2 - CORRE脟脙O DE MOVIMENTO E GUI
+-- 鉁� GUI 524x524 + Movimento Corrigido (God Mode/NoClip)
 --=====================================================
 
 --==================================================
@@ -10,7 +10,7 @@ local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local PhysicsService = game:GetService("PhysicsService") -- NOVO para NoClip
+local PhysicsService = game:GetService("PhysicsService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -34,7 +34,7 @@ local Config = {
 local Connections = {}
 
 --==================================================
--- GUI VISUAL (Mantida do V4)
+-- GUI VISUAL (Customizada: 524x524, Preto)
 --==================================================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "YookiiyGUI"
@@ -50,8 +50,8 @@ end
 -- Frame Principal
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 840, 0, 524)
-MainFrame.Position = UDim2.new(0.5, -420, 0.5, -262)
+MainFrame.Size = UDim2.new(0, 524, 0, 524) -- Tamanho customizado (524x524)
+MainFrame.Position = UDim2.new(0.5, -262, 0.5, -262)
 MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
@@ -81,7 +81,7 @@ Title.Size = UDim2.new(1, -80, 1, 0)
 Title.Position = UDim2.new(0, 10, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
-Title.Text = "馃幆 Yookiiy V4.1"
+Title.Text = "馃幆 Yookiiy V4.2"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 16
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -137,7 +137,7 @@ ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 ListLayout.Parent = ScrollFrame
 
 --==================================================
--- FUN脟脮ES DE CONTROLE
+-- FUN脟脮ES DE CONTROLE (Mantidas)
 --==================================================
 
 -- Fun莽茫o para criar Sliders (Mantida)
@@ -288,15 +288,15 @@ CreateToggle("InvisToggle", "Invisibilidade", Config.Invis, "Invis")
 -- Ajustar CanvasSize
 ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 20)
 
--- L贸gica de Minimizar (Mantida)
+-- L贸gica de Minimizar (Corrigida para 524x524)
 local isMinimized = false
 MinimizeButton.MouseButton1Click:Connect(function()
     isMinimized = not isMinimized
     if isMinimized then
-        MainFrame:TweenSize(UDim2.new(0, 840, 0, 40), "Out", "Quad", 0.2, true)
+        MainFrame:TweenSize(UDim2.new(0, 524, 0, 40), "Out", "Quad", 0.2, true)
         MinimizeButton.Text = "鉃�"
     else
-        MainFrame:TweenSize(UDim2.new(0, 840, 0, 524), "Out", "Quad", 0.2, true)
+        MainFrame:TweenSize(UDim2.new(0, 524, 0, 524), "Out", "Quad", 0.2, true)
         MinimizeButton.Text = "鉃�"
     end
 end)
@@ -450,12 +450,11 @@ end
 Config.FlySpeedUpdate = function(value) end
 
 --==================================================
--- NOCLIP (Corrigido: CollisionGroup)
+-- NOCLIP (Corrigido: Garantir Movimento)
 --==================================================
 local noClipGroupName = "YookiiyNoClip"
 local defaultCollisionGroup = "Default"
 
--- Cria o grupo de colis茫o uma vez
 pcall(function()
     PhysicsService:CreateCollisionGroup(noClipGroupName)
     PhysicsService:CollisionGroupSetCollidable(noClipGroupName, defaultCollisionGroup, false)
@@ -468,17 +467,21 @@ local function updateNoClip(v)
     for _, part in ipairs(char:GetDescendants()) do
         if part:IsA("BasePart") then
             if v then
-                -- Move a parte para o grupo de colis茫o NoClip
                 pcall(function()
                     part.CollisionGroup = noClipGroupName
                 end)
             else
-                -- Move a parte de volta para o grupo de colis茫o Default
                 pcall(function()
                     part.CollisionGroup = defaultCollisionGroup
                 end)
             end
         end
+    end
+    
+    -- CORRE脟脙O: For莽ar o Humanoid a n茫o entrar em PlatformStand
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.PlatformStand = false
     end
 end
 
@@ -487,7 +490,7 @@ Config.NoClipToggle = function(v)
 end
 
 --==================================================
--- GOD MODE (Corrigido: MaxHealth)
+-- GOD MODE (Corrigido: Garantir Movimento)
 --==================================================
 local originalMaxHealth = 100
 local function updateGodMode(v)
@@ -500,17 +503,20 @@ local function updateGodMode(v)
         originalMaxHealth = hum.MaxHealth
         hum.MaxHealth = math.huge
         
-        -- Loop para manter a vida cheia
         Connections.GodModeLoop = RunService.Heartbeat:Connect(function()
             if hum and hum.Health < hum.MaxHealth then
                 hum.Health = hum.MaxHealth
             end
         end)
     else
-        -- Desconecta o loop e restaura a vida m谩xima
         if Connections.GodModeLoop then Connections.GodModeLoop:Disconnect() Connections.GodModeLoop = nil end
         hum.MaxHealth = originalMaxHealth
         hum.Health = originalMaxHealth
+    end
+    
+    -- CORRE脟脙O: For莽ar o Humanoid a n茫o entrar em PlatformStand
+    if hum then
+        hum.PlatformStand = false
     end
 end
 
@@ -601,14 +607,13 @@ end
 Config.InvisToggle = updateInvis
 
 --==================================================
--- RESPAWN SAFE (Aprimorado)
+-- RESPAWN SAFE (Mantido)
 --==================================================
 Connections.CharacterAdded = player.CharacterAdded:Connect(function(char)
     task.wait(0.3)
     
     canJump = true
     
-    -- Reaplicar efeitos
     Config.ESPToggle(Config.ESP)
     Config.InvisToggle(Config.Invis)
     Config.NoClipToggle(Config.NoClip)
@@ -623,7 +628,7 @@ end)
 -- NOTIFICA脟脙O
 --==================================================
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "馃幆 Yookiiy V4.1";
-    Text = "Carregado com sucesso!\nGod Mode e NoClip Corrigidos.";
+    Title = "馃幆 Yookiiy V4.2";
+    Text = "Carregado com sucesso!\nMovimento e GUI Corrigidos.";
     Duration = 5;
 })
