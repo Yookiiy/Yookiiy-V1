@@ -1,6 +1,7 @@
+
 --=====================================================
--- 馃幆 YOOKIIY V4.2 - CORRE脟脙O DE MOVIMENTO E GUI
--- 鉁� GUI 524x524 + Movimento Corrigido (God Mode/NoClip)
+-- 馃幆 YOOKIIY V5 - MOBILE, EVAS脙O E ROBUSTEZ
+-- 鉁� Fly Mobile + NoClip Robusto + Anti-Detec莽茫o
 --=====================================================
 
 --==================================================
@@ -11,6 +12,7 @@ local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local PhysicsService = game:GetService("PhysicsService")
+local StarterGui = game:GetService("StarterGui")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -81,7 +83,7 @@ Title.Size = UDim2.new(1, -80, 1, 0)
 Title.Position = UDim2.new(0, 10, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
-Title.Text = "馃幆 Yookiiy V4.2"
+Title.Text = "馃幆 Yookiiy V5"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 16
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -288,7 +290,7 @@ CreateToggle("InvisToggle", "Invisibilidade", Config.Invis, "Invis")
 -- Ajustar CanvasSize
 ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 20)
 
--- L贸gica de Minimizar (Corrigida para 524x524)
+-- L贸gica de Minimizar (Mantida)
 local isMinimized = false
 MinimizeButton.MouseButton1Click:Connect(function()
     isMinimized = not isMinimized
@@ -301,8 +303,9 @@ MinimizeButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- L贸gica de Destruir (Mantida)
+-- L贸gica de Destruir (Aprimorada)
 local function Cleanup()
+    -- Desativar todos os efeitos antes de destruir
     if Config.FlyToggle then Config.FlyToggle(false) end
     if Config.HitboxToggle then Config.HitboxToggle(false) end
     if Config.InvisToggle then Config.InvisToggle(false) end
@@ -312,10 +315,12 @@ local function Cleanup()
     
     ScreenGui:Destroy()
     
+    -- Desconectar todas as conex玫es
     for _, conn in pairs(Connections) do
         if conn and typeof(conn) == "RBXScriptConnection" then conn:Disconnect() end
     end
     
+    -- Limpar vari谩veis globais
     Config = nil
     player = nil
 end
@@ -323,7 +328,7 @@ end
 DestroyButton.MouseButton1Click:Connect(Cleanup)
 
 --==================================================
--- JUMP, SPEED, FLY (Mantidos)
+-- JUMP, SPEED (Aprimorados)
 --==================================================
 local canJump = true
 local function handleJump()
@@ -395,6 +400,9 @@ Config.SpeedUpdate = function(value)
     updateSpeed(value)
 end
 
+--==================================================
+-- FLY (Corrigido para Mobile/Input-Based)
+--==================================================
 local flyBV, flyBG
 local function updateFly(v)
     local char = player.Character
@@ -418,20 +426,42 @@ local function updateFly(v)
         if speedBV then speedBV:Destroy() speedBV = nil end
         if Connections.SpeedHeartbeat then Connections.SpeedHeartbeat:Disconnect() Connections.SpeedHeartbeat = nil end
         
+        -- Conecta o loop de voo baseado em INPUT (Mobile-Friendly)
         Connections.FlyRenderStepped = RunService.RenderStepped:Connect(function()
             local camera = workspace.CurrentCamera
             if not camera then return end
             
             local moveDir = hum.MoveDirection
+            local flySpeed = Config.FlySpeed
             
-            if moveDir.Magnitude > 0 then
-                local relativeVector = Vector3.new(moveDir.X, moveDir.Y, -moveDir.Z)
-                local worldVector = camera.CFrame:VectorToWorldSpace(relativeVector)
-                flyBV.Velocity = worldVector * Config.FlySpeed
-            else
-                flyBV.Velocity = Vector3.zero
+            -- Movimento baseado na CFrame da C芒mera (Melhor para Mobile/PC)
+            local cf = camera.CFrame
+            local velocity = Vector3.new(0, 0, 0)
+            
+            -- W/S (Frente/Tr谩s)
+            if moveDir.Z < 0 then -- Frente
+                velocity = velocity + cf.LookVector * flySpeed
+            elseif moveDir.Z > 0 then -- Tr谩s
+                velocity = velocity - cf.LookVector * flySpeed
             end
             
+            -- A/D (Esquerda/Direita)
+            if moveDir.X < 0 then -- Esquerda
+                velocity = velocity - cf.RightVector * flySpeed
+            elseif moveDir.X > 0 then -- Direita
+                velocity = velocity + cf.RightVector * flySpeed
+            end
+            
+            -- Q/E (Cima/Baixo) - Usando teclas comuns para voo
+            if UIS:IsKeyDown(Enum.KeyCode.E) then
+                velocity = velocity + Vector3.new(0, flySpeed, 0)
+            elseif UIS:IsKeyDown(Enum.KeyCode.Q) then
+                velocity = velocity - Vector3.new(0, flySpeed, 0)
+            end
+            
+            flyBV.Velocity = velocity
+            
+            -- Manter a rota莽茫o do personagem alinhada com a c芒mera
             flyBG.CFrame = CFrame.new(flyBG.Parent.Position, flyBG.Parent.Position + camera.CFrame.LookVector)
         end)
     else
@@ -450,7 +480,7 @@ end
 Config.FlySpeedUpdate = function(value) end
 
 --==================================================
--- NOCLIP (Corrigido: Garantir Movimento)
+-- NOCLIP (Aprimorado: Reaplica莽茫o Constante)
 --==================================================
 local noClipGroupName = "YookiiyNoClip"
 local defaultCollisionGroup = "Default"
@@ -460,25 +490,43 @@ pcall(function()
     PhysicsService:CollisionGroupSetCollidable(noClipGroupName, defaultCollisionGroup, false)
 end)
 
+local function applyNoClip(char)
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            pcall(function()
+                part.CollisionGroup = noClipGroupName
+            end)
+        end
+    end
+end
+
+local function removeNoClip(char)
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            pcall(function()
+                part.CollisionGroup = defaultCollisionGroup
+            end)
+        end
+    end
+end
+
 local function updateNoClip(v)
     local char = player.Character
     if not char then return end
     
-    for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
-            if v then
-                pcall(function()
-                    part.CollisionGroup = noClipGroupName
-                end)
-            else
-                pcall(function()
-                    part.CollisionGroup = defaultCollisionGroup
-                end)
+    if v then
+        applyNoClip(char)
+        -- Loop de reaplica莽茫o constante (Anti-Anti-Cheat)
+        Connections.NoClipHeartbeat = RunService.Heartbeat:Connect(function()
+            if Config.NoClip and char then
+                applyNoClip(char)
             end
-        end
+        end)
+    else
+        if Connections.NoClipHeartbeat then Connections.NoClipHeartbeat:Disconnect() Connections.NoClipHeartbeat = nil end
+        removeNoClip(char)
     end
     
-    -- CORRE脟脙O: For莽ar o Humanoid a n茫o entrar em PlatformStand
     local hum = char:FindFirstChildOfClass("Humanoid")
     if hum then
         hum.PlatformStand = false
@@ -490,7 +538,7 @@ Config.NoClipToggle = function(v)
 end
 
 --==================================================
--- GOD MODE (Corrigido: Garantir Movimento)
+-- GOD MODE (Aprimorado: Garantir Movimento)
 --==================================================
 local originalMaxHealth = 100
 local function updateGodMode(v)
@@ -514,7 +562,6 @@ local function updateGodMode(v)
         hum.Health = originalMaxHealth
     end
     
-    -- CORRE脟脙O: For莽ar o Humanoid a n茫o entrar em PlatformStand
     if hum then
         hum.PlatformStand = false
     end
@@ -523,6 +570,15 @@ end
 Config.GodModeToggle = function(v)
     updateGodMode(v)
 end
+
+--==================================================
+-- ANTI-DETEC脟脙O (NOVO)
+--==================================================
+-- Tenta desativar logs e mensagens de debug (pode n茫o funcionar em todos os exploits)
+pcall(function()
+    StarterGui:SetCore("SendNotification", function() return end)
+    StarterGui:SetCore("ChatMakeSystemMessage", function() return end)
+end)
 
 --==================================================
 -- ESP, HITBOX, INVIS (Mantidos)
@@ -627,8 +683,8 @@ end)
 --==================================================
 -- NOTIFICA脟脙O
 --==================================================
-game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "馃幆 Yookiiy V4.2";
-    Text = "Carregado com sucesso!\nMovimento e GUI Corrigidos.";
+StarterGui:SetCore("SendNotification", {
+    Title = "馃幆 Yookiiy V5";
+    Text = "Carregado com sucesso!\nFly Mobile, NoClip Robusto e Anti-Detec莽茫o.";
     Duration = 5;
 })
