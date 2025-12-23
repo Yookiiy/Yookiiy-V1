@@ -1,291 +1,172 @@
--- SERVICES
-local Players = game:GetService("Players")
-local UIS = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
+-- =======================
+-- GUI MOBILE - Yookiiy V1
+-- =======================
+local player = game.Players.LocalPlayer
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.Name = "YookiiyGUI"
+gui.ResetOnSpawn = false
 
-local player = Players.LocalPlayer
-local camera = workspace.CurrentCamera
+local Values = player.PlayerGui:WaitForChild("CheatValues")
+
+-- MAIN
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.fromScale(0.35, 0.45)
+main.Position = UDim2.fromScale(0.05, 0.15)
+main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+main.BorderSizePixel = 0
+main.Active = true
+main.Draggable = true
+main.Name = "Main"
+
+-- TITLE
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1,0,0,30)
+title.BackgroundTransparency = 1
+title.Text = "Yookiiy V1"
+title.TextColor3 = Color3.new(1,1,1)
+title.TextXAlignment = Left
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 18
+
+local by = Instance.new("TextLabel", main)
+by.Size = UDim2.new(1,-40,0,30)
+by.Position = UDim2.new(0,0,0,0)
+by.BackgroundTransparency = 1
+by.Text = "By Github"
+by.TextColor3 = Color3.new(1,1,1)
+by.TextXAlignment = Right
+by.Font = Enum.Font.SourceSans
+by.TextSize = 14
+
+-- CLOSE (X)
+local close = Instance.new("TextButton", main)
+close.Size = UDim2.fromOffset(25,25)
+close.Position = UDim2.new(1,-28,0,3)
+close.Text = "X"
+close.BackgroundColor3 = Color3.fromRGB(170,0,0)
+close.TextColor3 = Color3.new(1,1,1)
+
+-- MINIMIZE
+local min = Instance.new("TextButton", main)
+min.Size = UDim2.fromOffset(25,25)
+min.Position = UDim2.new(1,-58,0,3)
+min.Text = "-"
+min.BackgroundColor3 = Color3.fromRGB(40,40,40)
+min.TextColor3 = Color3.new(1,1,1)
+
+-- CONTAINER
+local container = Instance.new("Frame", main)
+container.Position = UDim2.new(0,0,0,35)
+container.Size = UDim2.new(1,0,1,-35)
+container.BackgroundTransparency = 1
+
+-- UI LIST
+local layout = Instance.new("UIListLayout", container)
+layout.Padding = UDim.new(0,8)
 
 -- =======================
--- VALUES (GUI)
+-- HELPERS
 -- =======================
-local Values = Instance.new("Folder", player)
-Values.Name = "CheatValues"
+local function toggle(text, value)
+    local b = Instance.new("TextButton", container)
+    b.Size = UDim2.new(1,-10,0,35)
+    b.Text = text.." : OFF"
+    b.BackgroundColor3 = Color3.fromRGB(35,35,35)
+    b.TextColor3 = Color3.new(1,1,1)
 
-local JumpValue = Instance.new("NumberValue", Values)
-JumpValue.Name = "Jump"
-JumpValue.Value = 50
-
-local SpeedValue = Instance.new("NumberValue", Values)
-SpeedValue.Name = "Speed"
-SpeedValue.Value = 16
-
-local FlySpeedValue = Instance.new("NumberValue", Values)
-FlySpeedValue.Name = "FlySpeed"
-FlySpeedValue.Value = 60
-
-local ESPValue = Instance.new("BoolValue", Values)
-ESPValue.Name = "ESP"
-ESPValue.Value = false
-
-local HitboxValue = Instance.new("BoolValue", Values)
-HitboxValue.Name = "Hitbox"
-HitboxValue.Value = false
-
-local FlyValue = Instance.new("BoolValue", Values)
-FlyValue.Name = "Fly"
-FlyValue.Value = false
-
-local InvisValue = Instance.new("BoolValue", Values)
-InvisValue.Name = "Invis"
-InvisValue.Value = false
-
--- =======================
--- JUMP
--- =======================
-local canJump = true
-
-UIS.JumpRequest:Connect(function()
-    if FlyValue.Value then return end
-
-    local char = player.Character
-    local hum = char and char:FindFirstChild("Humanoid")
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hum or not hrp then return end
-    if hum.FloorMaterial == Enum.Material.Air then return end
-    if JumpValue.Value <= 50 or not canJump then return end
-
-    canJump = false
-
-    local bv = Instance.new("BodyVelocity")
-    bv.MaxForce = Vector3.new(0,1e9,0)
-    bv.Velocity = Vector3.new(0, JumpValue.Value, 0)
-    bv.Parent = hrp
-
-    task.delay(0.15, function()
-        if bv then bv:Destroy() end
+    b.MouseButton1Click:Connect(function()
+        value.Value = not value.Value
+        b.Text = text.." : "..(value.Value and "ON" or "OFF")
     end)
 
-    hum:GetPropertyChangedSignal("FloorMaterial"):Once(function()
-        canJump = true
-    end)
-end)
-
--- =======================
--- SPEED
--- =======================
-local speedBV, speedConn
-
-local function startSpeed()
-    local char = player.Character or player.CharacterAdded:Wait()
-    local hrp = char:WaitForChild("HumanoidRootPart")
-    local hum = char:WaitForChild("Humanoid")
-
-    if speedBV then speedBV:Destroy() end
-    if speedConn then speedConn:Disconnect() end
-
-    speedBV = Instance.new("BodyVelocity")
-    speedBV.MaxForce = Vector3.new(1e9,0,1e9)
-    speedBV.Parent = hrp
-
-    speedConn = RunService.Heartbeat:Connect(function()
-        if FlyValue.Value or SpeedValue.Value <= 16 then
-            speedBV.Velocity = Vector3.zero
-            return
-        end
-
-        local dir = hum.MoveDirection
-        if dir.Magnitude > 0 then
-            speedBV.Velocity = Vector3.new(dir.X,0,dir.Z).Unit * SpeedValue.Value
-        else
-            speedBV.Velocity = Vector3.zero
-        end
+    value.Changed:Connect(function(v)
+        b.Text = text.." : "..(v and "ON" or "OFF")
     end)
 end
 
--- =======================
--- FLY
--- =======================
-local flying = false
-local flyBV, flyBG
+local function slider(text, min, max, value)
+    local f = Instance.new("Frame", container)
+    f.Size = UDim2.new(1,-10,0,45)
+    f.BackgroundTransparency = 1
 
-local function startFly()
-    if flying then return end
-    local char = player.Character
-    local hum = char and char:FindFirstChild("Humanoid")
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hum or not hrp then return end
+    local lbl = Instance.new("TextLabel", f)
+    lbl.Size = UDim2.new(1,0,0,20)
+    lbl.Text = text..": "..value.Value
+    lbl.TextColor3 = Color3.new(1,1,1)
+    lbl.BackgroundTransparency = 1
+    lbl.TextXAlignment = Left
 
-    hum.PlatformStand = true
+    local bar = Instance.new("Frame", f)
+    bar.Size = UDim2.new(1,0,0,15)
+    bar.Position = UDim2.new(0,0,0,25)
+    bar.BackgroundColor3 = Color3.fromRGB(40,40,40)
 
-    flyBV = Instance.new("BodyVelocity")
-    flyBV.MaxForce = Vector3.new(1e9,1e9,1e9)
-    flyBV.Parent = hrp
+    local fill = Instance.new("Frame", bar)
+    fill.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    fill.Size = UDim2.new((value.Value-min)/(max-min),0,1,0)
 
-    flyBG = Instance.new("BodyGyro")
-    flyBG.MaxTorque = Vector3.new(1e9,1e9,1e9)
-    flyBG.P = 1e5
-    flyBG.Parent = hrp
+    local dragging = false
 
-    flying = true
-end
-
-local function stopFly()
-    flying = false
-    if flyBV then flyBV:Destroy() flyBV = nil end
-    if flyBG then flyBG:Destroy() flyBG = nil end
-
-    local hum = player.Character and player.Character:FindFirstChild("Humanoid")
-    if hum then hum.PlatformStand = false end
-end
-
-FlyValue.Changed:Connect(function(v)
-    if v then startFly() else stopFly() end
-end)
-
-RunService.RenderStepped:Connect(function()
-    if not flying or not flyBV or not flyBG then return end
-
-    local hum = player.Character and player.Character:FindFirstChild("Humanoid")
-    if not hum then return end
-
-    local dir = hum.MoveDirection
-    local camCF = camera.CFrame
-
-    if dir.Magnitude > 0 then
-        flyBV.Velocity = camCF:VectorToWorldSpace(dir) * FlySpeedValue.Value
-    else
-        flyBV.Velocity = Vector3.zero
-    end
-
-    flyBG.CFrame = CFrame.new(flyBG.Parent.Position, flyBG.Parent.Position + camCF.LookVector)
-end)
-
--- =======================
--- ESP
--- =======================
-local ESPs = {}
-
-local function updateESP()
-    for _,plr in ipairs(Players:GetPlayers()) do
-        if plr ~= player and plr.Character then
-            if ESPValue.Value then
-                if not ESPs[plr] then
-                    local hl = Instance.new("Highlight")
-                    hl.FillColor = Color3.fromRGB(255,0,0)
-                    hl.OutlineColor = Color3.new(1,1,1)
-                    hl.FillTransparency = 0.5
-                    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                    hl.Adornee = plr.Character
-                    hl.Parent = plr.Character
-                    ESPs[plr] = hl
-                end
-            else
-                if ESPs[plr] then ESPs[plr]:Destroy() ESPs[plr] = nil end
-            end
+    bar.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
         end
-    end
-end
-
-ESPValue.Changed:Connect(updateESP)
-Players.PlayerAdded:Connect(function(p)
-    p.CharacterAdded:Connect(function()
-        task.wait(0.2)
-        updateESP()
-        if HitboxValue.Value then applyHitbox(p) end
     end)
-end)
 
--- =======================
--- HITBOX
--- =======================
-local hitboxSize = Vector3.new(10,10,10)
-local hitboxes = {}
+    bar.InputEnded:Connect(function()
+        dragging = false
+    end)
 
-function applyHitbox(plr)
-    if plr == player or not plr.Character then return end
-    local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    if not hitboxes[plr] then
-        hitboxes[plr] = hrp.Size
-    end
-
-    hrp.Size = hitboxSize
-    hrp.Transparency = 1
-    hrp.CanCollide = false
-end
-
-function removeHitbox(plr)
-    local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
-    if hrp and hitboxes[plr] then
-        hrp.Size = hitboxes[plr]
-    end
-    hitboxes[plr] = nil
-end
-
-HitboxValue.Changed:Connect(function(v)
-    for _,plr in ipairs(Players:GetPlayers()) do
-        if v then applyHitbox(plr) else removeHitbox(plr) end
-    end
-end)
-
--- =======================
--- INVISIBILIDADE (GUI)
--- =======================
-local invisSaved = {}
-
-local function setInvisible(state)
-    local char = player.Character
-    if not char then return end
-
-    for _,obj in ipairs(char:GetDescendants()) do
-        if obj:IsA("BasePart") then
-            if state then
-                if not invisSaved[obj] then
-                    invisSaved[obj] = {
-                        Transparency = obj.Transparency,
-                        CanCollide = obj.CanCollide,
-                        Size = obj.Size,
-                        LocalTransparencyModifier = obj.LocalTransparencyModifier
-                    }
-                end
-                obj.Transparency = 1
-                obj.LocalTransparencyModifier = 1
-                obj.CanCollide = false
-                if obj.Name == "HumanoidRootPart" then
-                    obj.Size = Vector3.new(0.1,0.1,0.1)
-                end
-            else
-                local old = invisSaved[obj]
-                if old then
-                    obj.Transparency = old.Transparency
-                    obj.LocalTransparencyModifier = old.LocalTransparencyModifier
-                    obj.CanCollide = old.CanCollide
-                    obj.Size = old.Size
-                end
-            end
-        elseif obj:IsA("Decal") or obj:IsA("Texture") then
-            obj.Transparency = state and 1 or 0
+    game:GetService("UserInputService").InputChanged:Connect(function(i)
+        if dragging then
+            local x = math.clamp((i.Position.X - bar.AbsolutePosition.X)/bar.AbsoluteSize.X,0,1)
+            local val = math.floor(min + (max-min)*x)
+            value.Value = val
+            fill.Size = UDim2.new(x,0,1,0)
+            lbl.Text = text..": "..val
         end
-    end
+    end)
 end
 
-InvisValue.Changed:Connect(function(v)
-    setInvisible(v)
-    if not v then table.clear(invisSaved) end
+-- =======================
+-- ELEMENTS
+-- =======================
+slider("Speed",16,200, Values.Speed)
+slider("Jump",50,200, Values.Jump)
+
+toggle("ESP", Values.ESP)
+toggle("Hitbox", Values.Hitbox)
+toggle("Invis", Values.Invis)
+
+-- Fly speed input
+local flyBox = Instance.new("TextBox", container)
+flyBox.Size = UDim2.new(1,-10,0,35)
+flyBox.PlaceholderText = "Fly Speed (max 500)"
+flyBox.Text = ""
+flyBox.BackgroundColor3 = Color3.fromRGB(35,35,35)
+flyBox.TextColor3 = Color3.new(1,1,1)
+
+flyBox.FocusLost:Connect(function()
+    local v = tonumber(flyBox.Text)
+    if v then
+        Values.FlySpeed.Value = math.clamp(v,1,500)
+    end
 end)
 
 -- =======================
--- RESPAWN SAFE
+-- MINIMIZE / CLOSE
 -- =======================
-player.CharacterAdded:Connect(function()
-    task.wait(0.2)
-    canJump = true
-    startSpeed()
-    stopFly()
-    if InvisValue.Value then setInvisible(true) end
-    updateESP()
+local minimized = false
+
+min.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    container.Visible = not minimized
+    min.Text = minimized and "+" or "-"
 end)
 
-startSpeed()
+close.MouseButton1Click:Connect(function()
+    gui:Destroy()
+    if player.PlayerGui:FindFirstChild("CheatValues") then
+        player.PlayerGui.CheatValues:Destroy()
+    end
+end)
