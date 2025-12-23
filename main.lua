@@ -1,6 +1,6 @@
 --=====================================================
--- 馃幆 YOOKIIY V4 - COMPLETO E ROBUSTO
--- 鉁� GUI 840x524 + Fly Corrigido + NoClip + God Mode
+-- 馃幆 YOOKIIY V4.1 - CORRE脟脙O DE BUGS (GOD MODE/NOCLIP)
+-- 鉁� God Mode por MaxHealth + NoClip por CollisionGroup
 --=====================================================
 
 --==================================================
@@ -10,6 +10,7 @@ local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local PhysicsService = game:GetService("PhysicsService") -- NOVO para NoClip
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -25,15 +26,15 @@ local Config = {
     Hitbox = false,
     Fly = false,
     Invis = false,
-    NoClip = false, -- NOVO
-    GodMode = false, -- NOVO
+    NoClip = false,
+    GodMode = false,
 }
 
 -- Tabela para armazenar conex玫es de eventos
 local Connections = {}
 
 --==================================================
--- GUI VISUAL (Customizada: 840x524, Preto)
+-- GUI VISUAL (Mantida do V4)
 --==================================================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "YookiiyGUI"
@@ -49,9 +50,9 @@ end
 -- Frame Principal
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 840, 0, 524) -- Tamanho customizado (840x524)
+MainFrame.Size = UDim2.new(0, 840, 0, 524)
 MainFrame.Position = UDim2.new(0.5, -420, 0.5, -262)
-MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Preto Puro
+MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
@@ -70,7 +71,7 @@ MainStroke.Parent = MainFrame
 local Header = Instance.new("Frame")
 Header.Name = "Header"
 Header.Size = UDim2.new(1, 0, 0, 40)
-Header.BackgroundColor3 = Color3.fromRGB(15, 15, 15) -- Preto um pouco mais claro para o header
+Header.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 Header.BorderSizePixel = 0
 Header.Parent = MainFrame
 
@@ -80,7 +81,7 @@ Title.Size = UDim2.new(1, -80, 1, 0)
 Title.Position = UDim2.new(0, 10, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
-Title.Text = "馃幆 Yookiiy V4"
+Title.Text = "馃幆 Yookiiy V4.1"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 16
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -223,7 +224,7 @@ local function CreateToggle(name, text, defaultValue, valueKey)
     local ToggleFrame = Instance.new("Frame")
     ToggleFrame.Name = name
     ToggleFrame.Size = UDim2.new(1, -20, 0, 35)
-    ToggleFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10) -- Preto mais escuro
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
     ToggleFrame.BorderSizePixel = 0
     ToggleFrame.Parent = ScrollFrame
     
@@ -278,8 +279,8 @@ CreateSlider("SpeedSlider", "Super Velocidade", 16, 300, Config.Speed, "Speed")
 -- Adicionar Toggles
 CreateToggle("FlyToggle", "Voo (Fly)", Config.Fly, "Fly")
 CreateSlider("FlySpeedSlider", "Velocidade de Voo", 20, 200, Config.FlySpeed, "FlySpeed")
-CreateToggle("NoClipToggle", "NoClip", Config.NoClip, "NoClip") -- NOVO
-CreateToggle("GodModeToggle", "God Mode (Invencibilidade)", Config.GodMode, "GodMode") -- NOVO
+CreateToggle("NoClipToggle", "NoClip", Config.NoClip, "NoClip")
+CreateToggle("GodModeToggle", "God Mode (Invencibilidade)", Config.GodMode, "GodMode")
 CreateToggle("ESPToggle", "ESP (Highlight)", Config.ESP, "ESP")
 CreateToggle("HitboxToggle", "Hitbox Grande (5x)", Config.Hitbox, "Hitbox")
 CreateToggle("InvisToggle", "Invisibilidade", Config.Invis, "Invis")
@@ -287,24 +288,21 @@ CreateToggle("InvisToggle", "Invisibilidade", Config.Invis, "Invis")
 -- Ajustar CanvasSize
 ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 20)
 
--- L贸gica de Minimizar (Corrigida para 840x524)
+-- L贸gica de Minimizar (Mantida)
 local isMinimized = false
 MinimizeButton.MouseButton1Click:Connect(function()
     isMinimized = not isMinimized
     if isMinimized then
-        -- Minimizar para apenas o header
         MainFrame:TweenSize(UDim2.new(0, 840, 0, 40), "Out", "Quad", 0.2, true)
         MinimizeButton.Text = "鉃�"
     else
-        -- Maximizar para o tamanho original
         MainFrame:TweenSize(UDim2.new(0, 840, 0, 524), "Out", "Quad", 0.2, true)
         MinimizeButton.Text = "鉃�"
     end
 end)
 
--- L贸gica de Destruir
+-- L贸gica de Destruir (Mantida)
 local function Cleanup()
-    -- Desativar todos os efeitos antes de destruir
     if Config.FlyToggle then Config.FlyToggle(false) end
     if Config.HitboxToggle then Config.HitboxToggle(false) end
     if Config.InvisToggle then Config.InvisToggle(false) end
@@ -314,12 +312,10 @@ local function Cleanup()
     
     ScreenGui:Destroy()
     
-    -- Desconectar todas as conex玫es
     for _, conn in pairs(Connections) do
         if conn and typeof(conn) == "RBXScriptConnection" then conn:Disconnect() end
     end
     
-    -- Limpar vari谩veis globais
     Config = nil
     player = nil
 end
@@ -327,7 +323,7 @@ end
 DestroyButton.MouseButton1Click:Connect(Cleanup)
 
 --==================================================
--- JUMP (Mantido)
+-- JUMP, SPEED, FLY (Mantidos)
 --==================================================
 local canJump = true
 local function handleJump()
@@ -355,13 +351,9 @@ local function handleJump()
         end
     end)
 end
-
 Connections.JumpRequest = UIS.JumpRequest:Connect(handleJump)
 Config.JumpUpdate = function(value) end
 
---==================================================
--- SPEED (Mantido)
---==================================================
 local speedBV
 local function updateSpeed(value)
     local char = player.Character
@@ -399,14 +391,10 @@ local function updateSpeed(value)
         end
     end
 end
-
 Config.SpeedUpdate = function(value)
     updateSpeed(value)
 end
 
---==================================================
--- FLY (Corrigido: Movimenta莽茫o Invertida)
---==================================================
 local flyBV, flyBG
 local function updateFly(v)
     local char = player.Character
@@ -430,32 +418,20 @@ local function updateFly(v)
         if speedBV then speedBV:Destroy() speedBV = nil end
         if Connections.SpeedHeartbeat then Connections.SpeedHeartbeat:Disconnect() Connections.SpeedHeartbeat = nil end
         
-        -- Conecta o loop de voo
         Connections.FlyRenderStepped = RunService.RenderStepped:Connect(function()
             local camera = workspace.CurrentCamera
             if not camera then return end
             
             local moveDir = hum.MoveDirection
             
-            -- CORRE脟脙O: Usar VectorToWorldSpace para traduzir a dire莽茫o de movimento
-            -- para o espa莽o do mundo, alinhado com a c芒mera.
             if moveDir.Magnitude > 0 then
-                -- O bug de invers茫o geralmente ocorre porque o MoveDirection 茅 um vetor local
-                -- e o script anterior estava usando a CFrame da c芒mera de forma incorreta.
-                -- A corre莽茫o 茅 usar o LookVector da CFrame da c芒mera para a dire莽茫o de movimento.
-                
-                -- Obt茅m a dire莽茫o do movimento no espa莽o da c芒mera
-                local relativeVector = Vector3.new(moveDir.X, moveDir.Y, -moveDir.Z) -- Inverte Z para frente/tr谩s
-                
-                -- Traduz para o espa莽o do mundo
+                local relativeVector = Vector3.new(moveDir.X, moveDir.Y, -moveDir.Z)
                 local worldVector = camera.CFrame:VectorToWorldSpace(relativeVector)
-                
                 flyBV.Velocity = worldVector * Config.FlySpeed
             else
                 flyBV.Velocity = Vector3.zero
             end
             
-            -- Manter a rota莽茫o do personagem alinhada com a c芒mera
             flyBG.CFrame = CFrame.new(flyBG.Parent.Position, flyBG.Parent.Position + camera.CFrame.LookVector)
         end)
     else
@@ -468,22 +444,40 @@ local function updateFly(v)
         updateSpeed(Config.Speed)
     end
 end
-
 Config.FlyToggle = function(v)
     updateFly(v)
 end
 Config.FlySpeedUpdate = function(value) end
 
 --==================================================
--- NOCLIP (NOVO)
+-- NOCLIP (Corrigido: CollisionGroup)
 --==================================================
+local noClipGroupName = "YookiiyNoClip"
+local defaultCollisionGroup = "Default"
+
+-- Cria o grupo de colis茫o uma vez
+pcall(function()
+    PhysicsService:CreateCollisionGroup(noClipGroupName)
+    PhysicsService:CollisionGroupSetCollidable(noClipGroupName, defaultCollisionGroup, false)
+end)
+
 local function updateNoClip(v)
     local char = player.Character
     if not char then return end
     
     for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") and part.CanCollide then
-            part.CanCollide = not v
+        if part:IsA("BasePart") then
+            if v then
+                -- Move a parte para o grupo de colis茫o NoClip
+                pcall(function()
+                    part.CollisionGroup = noClipGroupName
+                end)
+            else
+                -- Move a parte de volta para o grupo de colis茫o Default
+                pcall(function()
+                    part.CollisionGroup = defaultCollisionGroup
+                end)
+            end
         end
     end
 end
@@ -493,8 +487,9 @@ Config.NoClipToggle = function(v)
 end
 
 --==================================================
--- GOD MODE (NOVO)
+-- GOD MODE (Corrigido: MaxHealth)
 --==================================================
+local originalMaxHealth = 100
 local function updateGodMode(v)
     local char = player.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
@@ -502,25 +497,20 @@ local function updateGodMode(v)
     if not hum then return end
     
     if v then
-        -- Desconecta a fun莽茫o de dano do Humanoid
-        Connections.TakeDamage = hum.TakeDamage:Connect(function(damage)
-            -- Apenas permite dano de void (y < -500)
-            if char.HumanoidRootPart.Position.Y > -500 then
-                return 0 -- Retorna 0 para anular o dano
-            end
-            return damage -- Permite dano de void
-        end)
+        originalMaxHealth = hum.MaxHealth
+        hum.MaxHealth = math.huge
         
-        -- Garante que a sa煤de n茫o caia abaixo de 1
-        Connections.HealthChanged = hum:GetPropertyChangedSignal("Health"):Connect(function()
-            if hum.Health < hum.MaxHealth and hum.Health > 0 then
+        -- Loop para manter a vida cheia
+        Connections.GodModeLoop = RunService.Heartbeat:Connect(function()
+            if hum and hum.Health < hum.MaxHealth then
                 hum.Health = hum.MaxHealth
             end
         end)
     else
-        -- Reconecta a fun莽茫o de dano
-        if Connections.TakeDamage then Connections.TakeDamage:Disconnect() Connections.TakeDamage = nil end
-        if Connections.HealthChanged then Connections.HealthChanged:Disconnect() Connections.HealthChanged = nil end
+        -- Desconecta o loop e restaura a vida m谩xima
+        if Connections.GodModeLoop then Connections.GodModeLoop:Disconnect() Connections.GodModeLoop = nil end
+        hum.MaxHealth = originalMaxHealth
+        hum.Health = originalMaxHealth
     end
 end
 
@@ -633,7 +623,7 @@ end)
 -- NOTIFICA脟脙O
 --==================================================
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "馃幆 Yookiiy V4";
-    Text = "Carregado com sucesso!\nFly Corrigido, NoClip e God Mode Adicionados.";
+    Title = "馃幆 Yookiiy V4.1";
+    Text = "Carregado com sucesso!\nGod Mode e NoClip Corrigidos.";
     Duration = 5;
 })
