@@ -1,6 +1,6 @@
 --=====================================================
--- 馃幆 YOOKIIY V2 - ROBUSTO E AVAN脟ADO
--- 鉁� Estabilidade Aprimorada (Fly/Speed) + C贸digo Refatorado
+-- 馃幆 YOOKIIY V4 - COMPLETO E ROBUSTO
+-- 鉁� GUI 840x524 + Fly Corrigido + NoClip + God Mode
 --=====================================================
 
 --==================================================
@@ -25,13 +25,15 @@ local Config = {
     Hitbox = false,
     Fly = false,
     Invis = false,
+    NoClip = false, -- NOVO
+    GodMode = false, -- NOVO
 }
 
 -- Tabela para armazenar conex玫es de eventos
 local Connections = {}
 
 --==================================================
--- GUI VISUAL (Mantida do V1 Otimizado)
+-- GUI VISUAL (Customizada: 840x524, Preto)
 --==================================================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "YookiiyGUI"
@@ -47,9 +49,9 @@ end
 -- Frame Principal
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 320, 0, 450)
-MainFrame.Position = UDim2.new(0.5, -160, 0.5, -225)
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+MainFrame.Size = UDim2.new(0, 840, 0, 524) -- Tamanho customizado (840x524)
+MainFrame.Position = UDim2.new(0.5, -420, 0.5, -262)
+MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Preto Puro
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
@@ -68,7 +70,7 @@ MainStroke.Parent = MainFrame
 local Header = Instance.new("Frame")
 Header.Name = "Header"
 Header.Size = UDim2.new(1, 0, 0, 40)
-Header.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+Header.BackgroundColor3 = Color3.fromRGB(15, 15, 15) -- Preto um pouco mais claro para o header
 Header.BorderSizePixel = 0
 Header.Parent = MainFrame
 
@@ -78,7 +80,7 @@ Title.Size = UDim2.new(1, -80, 1, 0)
 Title.Position = UDim2.new(0, 10, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
-Title.Text = "馃幆 Yookiiy V2"
+Title.Text = "馃幆 Yookiiy V4"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 16
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -134,10 +136,10 @@ ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 ListLayout.Parent = ScrollFrame
 
 --==================================================
--- FUN脟脮ES DE CONTROLE (Refatoradas)
+-- FUN脟脮ES DE CONTROLE
 --==================================================
 
--- Fun莽茫o para criar Sliders
+-- Fun莽茫o para criar Sliders (Mantida)
 local function CreateSlider(name, text, min, max, defaultValue, valueKey)
     local SliderFrame = Instance.new("Frame")
     SliderFrame.Name = name
@@ -186,7 +188,6 @@ local function CreateSlider(name, text, min, max, defaultValue, valueKey)
         Label.Text = text .. ": " .. value
         SliderFill.Size = UDim2.new((value - min) / (max - min), 0, 1, 0)
         
-        -- Chamar a fun莽茫o de atualiza莽茫o do m贸dulo (se existir)
         if Config[valueKey .. "Update"] then
             Config[valueKey .. "Update"](value)
         end
@@ -196,13 +197,13 @@ local function CreateSlider(name, text, min, max, defaultValue, valueKey)
         dragging = true
     end)
     
-    Connections.SliderInputEnded = UIS.InputEnded:Connect(function(input)
+    Connections["SliderInputEnded" .. valueKey] = UIS.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
         end
     end)
     
-    Connections.SliderRenderStepped = RunService.RenderStepped:Connect(function()
+    Connections["SliderRenderStepped" .. valueKey] = RunService.RenderStepped:Connect(function()
         if dragging then
             local mousePos = UIS:GetMouseLocation().X
             local sliderPos = SliderBack.AbsolutePosition.X
@@ -217,12 +218,12 @@ local function CreateSlider(name, text, min, max, defaultValue, valueKey)
     return SliderFrame
 end
 
--- Fun莽茫o para criar Toggles
+-- Fun莽茫o para criar Toggles (Mantida)
 local function CreateToggle(name, text, defaultValue, valueKey)
     local ToggleFrame = Instance.new("Frame")
     ToggleFrame.Name = name
     ToggleFrame.Size = UDim2.new(1, -20, 0, 35)
-    ToggleFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10) -- Preto mais escuro
     ToggleFrame.BorderSizePixel = 0
     ToggleFrame.Parent = ScrollFrame
     
@@ -244,25 +245,24 @@ local function CreateToggle(name, text, defaultValue, valueKey)
     local ToggleButton = Instance.new("TextButton")
     ToggleButton.Size = UDim2.new(0, 45, 0, 25)
     ToggleButton.Position = UDim2.new(1, -55, 0.5, -12.5)
-    ToggleButton.BackgroundColor3 = defaultValue and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(60, 60, 80)
+    ToggleButton.BackgroundColor3 = defaultValue and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(30, 30, 30)
     ToggleButton.BorderSizePixel = 0
     ToggleButton.Text = defaultValue and "ON" or "OFF"
     ToggleButton.Font = Enum.Font.GothamBold
     ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     ToggleButton.TextSize = 12
-    ToggleButton.Parent = ToggleButton
+    ToggleButton.Parent = ToggleFrame
     
     local function refresh()
         local isEnabled = Config[valueKey]
         ToggleButton.Text = isEnabled and "ON" or "OFF"
-        ToggleButton.BackgroundColor3 = isEnabled and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(60, 60, 80)
+        ToggleButton.BackgroundColor3 = isEnabled and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(30, 30, 30)
     end
     
     ToggleButton.MouseButton1Click:Connect(function()
         Config[valueKey] = not Config[valueKey]
         refresh()
         
-        -- Chamar a fun莽茫o de ativa莽茫o/desativa莽茫o do m贸dulo
         if Config[valueKey .. "Toggle"] then
             Config[valueKey .. "Toggle"](Config[valueKey])
         end
@@ -274,10 +274,12 @@ end
 -- Adicionar Sliders
 CreateSlider("JumpSlider", "Super Pulo", 50, 200, Config.Jump, "Jump")
 CreateSlider("SpeedSlider", "Super Velocidade", 16, 300, Config.Speed, "Speed")
-CreateSlider("FlySpeedSlider", "Velocidade de Voo", 20, 200, Config.FlySpeed, "FlySpeed")
 
 -- Adicionar Toggles
 CreateToggle("FlyToggle", "Voo (Fly)", Config.Fly, "Fly")
+CreateSlider("FlySpeedSlider", "Velocidade de Voo", 20, 200, Config.FlySpeed, "FlySpeed")
+CreateToggle("NoClipToggle", "NoClip", Config.NoClip, "NoClip") -- NOVO
+CreateToggle("GodModeToggle", "God Mode (Invencibilidade)", Config.GodMode, "GodMode") -- NOVO
 CreateToggle("ESPToggle", "ESP (Highlight)", Config.ESP, "ESP")
 CreateToggle("HitboxToggle", "Hitbox Grande (5x)", Config.Hitbox, "Hitbox")
 CreateToggle("InvisToggle", "Invisibilidade", Config.Invis, "Invis")
@@ -285,15 +287,17 @@ CreateToggle("InvisToggle", "Invisibilidade", Config.Invis, "Invis")
 -- Ajustar CanvasSize
 ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 20)
 
--- L贸gica de Minimizar
+-- L贸gica de Minimizar (Corrigida para 840x524)
 local isMinimized = false
 MinimizeButton.MouseButton1Click:Connect(function()
     isMinimized = not isMinimized
     if isMinimized then
-        MainFrame:TweenSize(UDim2.new(0, 320, 0, 40), "Out", "Quad", 0.2, true)
+        -- Minimizar para apenas o header
+        MainFrame:TweenSize(UDim2.new(0, 840, 0, 40), "Out", "Quad", 0.2, true)
         MinimizeButton.Text = "鉃�"
     else
-        MainFrame:TweenSize(UDim2.new(0, 320, 0, 450), "Out", "Quad", 0.2, true)
+        -- Maximizar para o tamanho original
+        MainFrame:TweenSize(UDim2.new(0, 840, 0, 524), "Out", "Quad", 0.2, true)
         MinimizeButton.Text = "鉃�"
     end
 end)
@@ -301,10 +305,12 @@ end)
 -- L贸gica de Destruir
 local function Cleanup()
     -- Desativar todos os efeitos antes de destruir
-    Config.FlyToggle(false)
-    Config.HitboxToggle(false)
-    Config.InvisToggle(false)
-    Config.ESPToggle(false)
+    if Config.FlyToggle then Config.FlyToggle(false) end
+    if Config.HitboxToggle then Config.HitboxToggle(false) end
+    if Config.InvisToggle then Config.InvisToggle(false) end
+    if Config.ESPToggle then Config.ESPToggle(false) end
+    if Config.NoClipToggle then Config.NoClipToggle(false) end
+    if Config.GodModeToggle then Config.GodModeToggle(false) end
     
     ScreenGui:Destroy()
     
@@ -321,7 +327,7 @@ end
 DestroyButton.MouseButton1Click:Connect(Cleanup)
 
 --==================================================
--- JUMP (Mantido do V1 Otimizado)
+-- JUMP (Mantido)
 --==================================================
 local canJump = true
 local function handleJump()
@@ -351,9 +357,10 @@ local function handleJump()
 end
 
 Connections.JumpRequest = UIS.JumpRequest:Connect(handleJump)
+Config.JumpUpdate = function(value) end
 
 --==================================================
--- SPEED (Refatorado para WalkSpeed + Fallback)
+-- SPEED (Mantido)
 --==================================================
 local speedBV
 local function updateSpeed(value)
@@ -363,14 +370,12 @@ local function updateSpeed(value)
     if not hum then return end
     
     if value > 16 and not Config.Fly then
-        -- Tenta usar WalkSpeed (mais est谩vel)
         hum.WalkSpeed = value
         
-        -- Remove BodyVelocity se estiver ativo
         if speedBV then speedBV:Destroy() speedBV = nil end
+        if Connections.SpeedHeartbeat then Connections.SpeedHeartbeat:Disconnect() Connections.SpeedHeartbeat = nil end
     else
-        -- Se WalkSpeed for bloqueado ou Fly estiver ativo, usa BodyVelocity (Fallback)
-        hum.WalkSpeed = 16 -- Reseta o WalkSpeed
+        hum.WalkSpeed = 16
         
         local root = char and char:FindFirstChild("HumanoidRootPart")
         if not root then return end
@@ -381,25 +386,26 @@ local function updateSpeed(value)
             speedBV.Parent = root
         end
         
-        Connections.SpeedHeartbeat = RunService.Heartbeat:Connect(function()
-            local moveDir = hum.MoveDirection
-            if moveDir.Magnitude > 0 then
-                local velocity = Vector3.new(moveDir.X, 0, moveDir.Z).Unit * value
-                speedBV.Velocity = velocity
-            else
-                speedBV.Velocity = Vector3.zero
-            end
-        end)
+        if not Connections.SpeedHeartbeat then
+            Connections.SpeedHeartbeat = RunService.Heartbeat:Connect(function()
+                local moveDir = hum.MoveDirection
+                if moveDir.Magnitude > 0 then
+                    local velocity = Vector3.new(moveDir.X, 0, moveDir.Z).Unit * value
+                    speedBV.Velocity = velocity
+                else
+                    speedBV.Velocity = Vector3.zero
+                end
+            end)
+        end
     end
 end
 
--- Fun莽茫o de atualiza莽茫o do slider
 Config.SpeedUpdate = function(value)
     updateSpeed(value)
 end
 
 --==================================================
--- FLY (Refatorado para maior estabilidade)
+-- FLY (Corrigido: Movimenta莽茫o Invertida)
 --==================================================
 local flyBV, flyBG
 local function updateFly(v)
@@ -412,9 +418,6 @@ local function updateFly(v)
     if v then
         hum.PlatformStand = true
         
-        -- Tenta usar AlignPosition/AlignOrientation (mais est谩vel)
-        -- Se o executor n茫o suportar, o BodyVelocity/BodyGyro ser谩 usado
-        
         flyBV = Instance.new("BodyVelocity")
         flyBV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
         flyBV.Parent = root
@@ -424,9 +427,8 @@ local function updateFly(v)
         flyBG.P = 1e5
         flyBG.Parent = root
         
-        -- Desconecta o BodyVelocity do Speed se estiver ativo
         if speedBV then speedBV:Destroy() speedBV = nil end
-        if Connections.SpeedHeartbeat then Connections.SpeedHeartbeat:Disconnect() end
+        if Connections.SpeedHeartbeat then Connections.SpeedHeartbeat:Disconnect() Connections.SpeedHeartbeat = nil end
         
         -- Conecta o loop de voo
         Connections.FlyRenderStepped = RunService.RenderStepped:Connect(function()
@@ -434,50 +436,108 @@ local function updateFly(v)
             if not camera then return end
             
             local moveDir = hum.MoveDirection
+            
+            -- CORRE脟脙O: Usar VectorToWorldSpace para traduzir a dire莽茫o de movimento
+            -- para o espa莽o do mundo, alinhado com a c芒mera.
             if moveDir.Magnitude > 0 then
-                flyBV.Velocity = camera.CFrame:VectorToWorldSpace(moveDir) * Config.FlySpeed
+                -- O bug de invers茫o geralmente ocorre porque o MoveDirection 茅 um vetor local
+                -- e o script anterior estava usando a CFrame da c芒mera de forma incorreta.
+                -- A corre莽茫o 茅 usar o LookVector da CFrame da c芒mera para a dire莽茫o de movimento.
+                
+                -- Obt茅m a dire莽茫o do movimento no espa莽o da c芒mera
+                local relativeVector = Vector3.new(moveDir.X, moveDir.Y, -moveDir.Z) -- Inverte Z para frente/tr谩s
+                
+                -- Traduz para o espa莽o do mundo
+                local worldVector = camera.CFrame:VectorToWorldSpace(relativeVector)
+                
+                flyBV.Velocity = worldVector * Config.FlySpeed
             else
                 flyBV.Velocity = Vector3.zero
             end
             
+            -- Manter a rota莽茫o do personagem alinhada com a c芒mera
             flyBG.CFrame = CFrame.new(flyBG.Parent.Position, flyBG.Parent.Position + camera.CFrame.LookVector)
         end)
     else
-        -- Desativa o voo
-        if flyBV then flyBV:Destroy() end
-        if flyBG then flyBG:Destroy() end
-        if Connections.FlyRenderStepped then Connections.FlyRenderStepped:Disconnect() end
+        if flyBV then flyBV:Destroy() flyBV = nil end
+        if flyBG then flyBG:Destroy() flyBG = nil end
+        if Connections.FlyRenderStepped then Connections.FlyRenderStepped:Disconnect() Connections.FlyRenderStepped = nil end
         
         hum.PlatformStand = false
         
-        -- Reativa o Speed se estiver configurado
         updateSpeed(Config.Speed)
     end
 end
 
--- Fun莽茫o de ativa莽茫o/desativa莽茫o do toggle
 Config.FlyToggle = function(v)
     updateFly(v)
 end
+Config.FlySpeedUpdate = function(value) end
 
--- Fun莽茫o de atualiza莽茫o do slider
-Config.FlySpeedUpdate = function(value)
-    -- Apenas se o fly estiver ativo
-    if Config.Fly and flyBV then
-        -- O loop RenderStepped j谩 usa Config.FlySpeed, ent茫o a atualiza莽茫o 茅 autom谩tica
+--==================================================
+-- NOCLIP (NOVO)
+--==================================================
+local function updateNoClip(v)
+    local char = player.Character
+    if not char then return end
+    
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") and part.CanCollide then
+            part.CanCollide = not v
+        end
     end
 end
 
+Config.NoClipToggle = function(v)
+    updateNoClip(v)
+end
+
 --==================================================
--- ESP (Mantido do V1 Otimizado)
+-- GOD MODE (NOVO)
+--==================================================
+local function updateGodMode(v)
+    local char = player.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    
+    if not hum then return end
+    
+    if v then
+        -- Desconecta a fun莽茫o de dano do Humanoid
+        Connections.TakeDamage = hum.TakeDamage:Connect(function(damage)
+            -- Apenas permite dano de void (y < -500)
+            if char.HumanoidRootPart.Position.Y > -500 then
+                return 0 -- Retorna 0 para anular o dano
+            end
+            return damage -- Permite dano de void
+        end)
+        
+        -- Garante que a sa煤de n茫o caia abaixo de 1
+        Connections.HealthChanged = hum:GetPropertyChangedSignal("Health"):Connect(function()
+            if hum.Health < hum.MaxHealth and hum.Health > 0 then
+                hum.Health = hum.MaxHealth
+            end
+        end)
+    else
+        -- Reconecta a fun莽茫o de dano
+        if Connections.TakeDamage then Connections.TakeDamage:Disconnect() Connections.TakeDamage = nil end
+        if Connections.HealthChanged then Connections.HealthChanged:Disconnect() Connections.HealthChanged = nil end
+    end
+end
+
+Config.GodModeToggle = function(v)
+    updateGodMode(v)
+end
+
+--==================================================
+-- ESP, HITBOX, INVIS (Mantidos)
 --==================================================
 local ESPs = {}
-local function updateESP()
+local function updateESP(v)
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= player and p.Character then
             local highlight = ESPs[p]
             
-            if Config.ESP then
+            if v then
                 if not highlight then
                     highlight = Instance.new("Highlight")
                     highlight.Adornee = p.Character
@@ -493,18 +553,11 @@ local function updateESP()
         end
     end
 end
-
-Config.ESPToggle = function(v)
-    updateESP()
-end
-
+Config.ESPToggle = updateESP
 Connections.PlayerRemoving = Players.PlayerRemoving:Connect(function(p)
     if ESPs[p] then ESPs[p]:Destroy() ESPs[p] = nil end
 end)
 
---==================================================
--- HITBOX (Aprimorado)
---==================================================
 local hitboxes = {}
 local function updateHitbox(v)
     for _, p in ipairs(Players:GetPlayers()) do
@@ -528,14 +581,8 @@ local function updateHitbox(v)
         end
     end
 end
+Config.HitboxToggle = updateHitbox
 
-Config.HitboxToggle = function(v)
-    updateHitbox(v)
-end
-
---==================================================
--- INVIS (Aprimorado - Manipula莽茫o de Material)
---==================================================
 local invisSaved = {}
 local function updateInvis(v)
     local char = player.Character
@@ -544,13 +591,11 @@ local function updateInvis(v)
     for _, o in ipairs(char:GetDescendants()) do
         if o:IsA("BasePart") then
             if v then
-                -- Salvar e aplicar invisibilidade
                 invisSaved[o] = {T = o.Transparency, C = o.CanCollide, M = o.Material}
                 o.Transparency = 1
                 o.CanCollide = false
-                o.Material = Enum.Material.ForceField -- Pequeno aprimoramento visual/evasivo
+                o.Material = Enum.Material.ForceField
             else
-                -- Restaurar
                 local d = invisSaved[o]
                 if d then 
                     o.Transparency = d.T 
@@ -563,10 +608,7 @@ local function updateInvis(v)
     
     if not v then table.clear(invisSaved) end
 end
-
-Config.InvisToggle = function(v)
-    updateInvis(v)
-end
+Config.InvisToggle = updateInvis
 
 --==================================================
 -- RESPAWN SAFE (Aprimorado)
@@ -577,12 +619,13 @@ Connections.CharacterAdded = player.CharacterAdded:Connect(function(char)
     canJump = true
     
     -- Reaplicar efeitos
-    updateESP()
+    Config.ESPToggle(Config.ESP)
+    Config.InvisToggle(Config.Invis)
+    Config.NoClipToggle(Config.NoClip)
+    Config.GodModeToggle(Config.GodMode)
     
-    if Config.Fly then updateFly(true) end
-    if Config.Invis then updateInvis(true) end
+    if Config.Fly then Config.FlyToggle(true) end
     
-    -- Reaplicar Speed (WalkSpeed ou BodyVelocity)
     updateSpeed(Config.Speed)
 end)
 
@@ -590,7 +633,7 @@ end)
 -- NOTIFICA脟脙O
 --==================================================
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "馃幆 Yookiiy V2";
-    Text = "Carregado com sucesso!\nEstabilidade de Fly/Speed aprimorada.";
+    Title = "馃幆 Yookiiy V4";
+    Text = "Carregado com sucesso!\nFly Corrigido, NoClip e God Mode Adicionados.";
     Duration = 5;
 })
